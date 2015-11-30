@@ -97,31 +97,28 @@ int ide_run_callback(struct libwebsocket_context *context, struct libwebsocket *
         case LWS_CALLBACK_ESTABLISHED:
             log_message(LOG_INFO, "ide-run websocket connection established\r\n");
             sess->wsi = wsi;
-            sess->process = NULL;
-            sess->pid = -1;
-            sess->fileno = -1;
             break;
             
         case LWS_CALLBACK_CLOSED:
             log_message(LOG_INFO, "ide-run websocket connection closed\r\n");
-            process_stop(sess->process, sess->pid);
-            sess->process = NULL;
-            sess->pid = -1;
-            sess->fileno = -1;
+            if(pid != -1) {
+                log_message(LOG_DEBUG, "Killing process: %d\r\n", (int) pid);
+                process_stop(pfstream, pid);
+            }
             break;
             
         case LWS_CALLBACK_SERVER_WRITEABLE:
             /* Forward the process output to the browser if any */
             if(pid != -1) {
                 errno = 0;
-                b_read = read(sess->fileno, sess->p_buff, DPT_WEB_IDE_PROC_READ_BUFF);
+                b_read = read(pfd, pbuff, DPT_WEB_IDE_PROC_READ_BUFF);
                 if(b_read == -1 && errno != EAGAIN) {
                     // The read call failed, close
                     log_message(LOG_ERROR, "Could not read from interpreter stdout: %s\r\n", strerror(errno));
                     return -1;
                 }
                 if(b_read > 0) {
-                    libwebsocket_write(wsi, sess->p_buff, b_read, LWS_WRITE_TEXT);
+                    libwebsocket_write(wsi, pbuff, b_read, LWS_WRITE_TEXT);
                 }
             }
             break;
@@ -130,25 +127,16 @@ int ide_run_callback(struct libwebsocket_context *context, struct libwebsocket *
             // Dump source code into file
             _dump_to_file((const char*) in, "/tmp/dptwebide_tmp154968.js");
             
-            if(pid != -1) {
-                
-            }
-            
             // Kill previous process if any
-            if(sess->pid != -1) {
-                log_message(LOG_DEBUG, "Killing previous process: %d\r\n", sess->fileno);
-                process_stop(sess->process, sess->pid);
-                log_message(LOG_DEBUG, "Previous process killed\r\n");
-                sess->process = NULL;
-                sess->pid = -1;
-                sess->fileno = -1;
+            if(pid != -1) {
+                log_message(LOG_DEBUG, "Killing process: %d\r\n", (int) pid);
+                process_stop(pfstream, pid);
             }
             
             // Open interpreter process and set to non blocking read
-            sess->process = process_start("dpt-js /tmp/dptwebide_tmp154968.js 2>&1", &(sess->pid));
-            sess->fileno = fileno(sess->process);
-            fcntl(sess->fileno, F_SETFL, O_NONBLOCK);
-            
+            pfstream = process_start("dpt-js /tmp/dptwebide_tmp154968.js 2>&1", &(pid));
+            pfd = fileno(pfstream);
+            fcntl(pfd, F_SETFL, O_NONBLOCK);
             break;
      
         default:
