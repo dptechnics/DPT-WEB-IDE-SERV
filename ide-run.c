@@ -104,6 +104,7 @@ int ide_run_callback(struct libwebsocket_context *context, struct libwebsocket *
             if(pid > 0) {
                 log_message(LOG_DEBUG, "Killing process: %d\r\n", (int) pid);
                 process_stop(pfstream, pid);
+                pid = -1;
             }
             break;
             
@@ -131,6 +132,7 @@ int ide_run_callback(struct libwebsocket_context *context, struct libwebsocket *
             if(pid > 0) {
                 log_message(LOG_DEBUG, "Killing process: %d\r\n", (int) pid);
                 process_stop(pfstream, pid);
+                pid = -1;
             }
             
             // Open interpreter process and set to non blocking read
