@@ -101,7 +101,7 @@ int ide_run_callback(struct libwebsocket_context *context, struct libwebsocket *
             
         case LWS_CALLBACK_CLOSED:
             log_message(LOG_INFO, "ide-run websocket connection closed\r\n");
-            if(pid != -1) {
+            if(pid > 0) {
                 log_message(LOG_DEBUG, "Killing process: %d\r\n", (int) pid);
                 process_stop(pfstream, pid);
             }
@@ -109,7 +109,7 @@ int ide_run_callback(struct libwebsocket_context *context, struct libwebsocket *
             
         case LWS_CALLBACK_SERVER_WRITEABLE:
             /* Forward the process output to the browser if any */
-            if(pid != -1) {
+            if(pid > 0) {
                 errno = 0;
                 b_read = read(pfd, pbuff, DPT_WEB_IDE_PROC_READ_BUFF);
                 if(b_read == -1 && errno != EAGAIN) {
@@ -128,7 +128,7 @@ int ide_run_callback(struct libwebsocket_context *context, struct libwebsocket *
             _dump_to_file((const char*) in, "/tmp/dptwebide_tmp154968.js");
             
             // Kill previous process if any
-            if(pid != -1) {
+            if(pid > 0) {
                 log_message(LOG_DEBUG, "Killing process: %d\r\n", (int) pid);
                 process_stop(pfstream, pid);
             }
