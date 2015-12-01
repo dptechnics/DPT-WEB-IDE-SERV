@@ -33,6 +33,7 @@
 
 #include <libwebsockets.h>
 #include <stdio.h>
+#include <sys/types.h>
 
 #include "process.h"
 #include "config.h"
@@ -41,7 +42,10 @@
  * Session data for the ide-run protocol.
  */
 struct ide_run_session {
-    struct libwebsocket *wsi;
+    pid_t pid;                                          /* The PID of the interpreter process */
+    FILE* pfstream;                                     /* The stdout filestream of the interpreter process */
+    int pfd;                                            /* The stdout file descriptor of the interpreter process */
+    unsigned char pbuff[DPT_WEB_IDE_PROC_READ_BUFF];    /* The output buffer of the interpreter process */
 };
 
 /**
